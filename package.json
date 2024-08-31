@@ -2,9 +2,10 @@
   "name": "backend_with_javascript",
   "version": "1.0.0",
   "description": "A Repository to Learn Everything About Backend with JavaScript",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [
     "JavaScript",
@@ -14,5 +15,8 @@
     "MongoDb"
   ],
   "author": "Sobhanjan Mahanta",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
 }
