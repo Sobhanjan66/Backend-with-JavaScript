@@ -146,3 +146,45 @@ myServer.listen(8000, () => console.log("Server Started!"));
 ```
 ```
 
+```markdown
+## Getting Started with Express.js
+
+### Installing Express
+To install Express, run the following command:
+```bash
+npm i express
+```
+
+### Creating a Basic Express Server
+Here’s how to set up a simple server using Express:
+
+```javascript
+const http = require("http");
+const express = require("express");
+
+const app = express();
+
+app.get('/', (req, res) => {
+  return res.send("Hello From Home Page");
+});
+
+app.get('/about', (req, res) => {
+  return res.send("Hey " + req.query.name + ", I'm Sobhanjan");
+  // 'name' parameter query must be added manually in the URL in the browser, e.g., /about?name=John
+});
+
+// Creating an HTTP server (for beginner-level understanding)
+const myServer = http.createServer(app); 
+// Here, 'app' works as a handler function, but using the 'http' module is not necessary in Express.
+
+myServer.listen(8000, () => console.log("Server Started!"));
+
+// Alternatively, in Express, we can simply write:
+app.listen(8000, () => console.log("Server Started!!"));
+```
+
+### Notes
+- When using Express, you don’t need to use the `http` module as shown above. The `app.listen` method in Express is sufficient to start the server.
+- The second route (`/about`) demonstrates how to use query parameters in Express. For example, you can access it via `/about?name=John` in the browser.
+```
+
