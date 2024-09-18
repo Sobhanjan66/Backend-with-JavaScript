@@ -4,7 +4,6 @@ This is a repository to learn everything about Backend with JavaScript
 
 -[Model link](https://app.eraser.io/workspace/YtPqz1VogxGy1jzIDkzj?origin=share)
 
-```markdown
 # Backend Project Guide
 
 ## Project Initialization
@@ -144,9 +143,7 @@ const myServer = http.createServer((req, res) => {
 
 myServer.listen(8000, () => console.log("Server Started!"));
 ```
-```
 
-```markdown
 ## Getting Started with Express.js
 
 ### Installing Express
@@ -186,5 +183,4 @@ app.listen(8000, () => console.log("Server Started!!"));
 ### Notes
 - When using Express, you don’t need to use the `http` module as shown above. The `app.listen` method in Express is sufficient to start the server.
 - The second route (`/about`) demonstrates how to use query parameters in Express. For example, you can access it via `/about?name=John` in the browser.
-```
 
