@@ -184,3 +184,129 @@ app.listen(8000, () => console.log("Server Started!!"));
 - When using Express, you don’t need to use the `http` module as shown above. The `app.listen` method in Express is sufficient to start the server.
 - The second route (`/about`) demonstrates how to use query parameters in Express. For example, you can access it via `/about?name=John` in the browser.
 
+
+# Designing a REST API
+
+To design a REST API using Express.js, follow the steps below:
+
+## Setup
+
+1. **Install Express.js**:
+    ```bash
+    npm install express
+    ```
+2. **Create `server.js`**:
+    ```js
+    const express = require("express");
+    const users = require('./MOCK_DATA.json');
+
+    const app = express();
+    const PORT = 8000;
+
+    app.listen(PORT, () => console.log(`Server started at port ${PORT}`));
+    ```
+
+## Defining Routes
+
+### Get All Users
+
+```js
+app.get("/api/users", (req, res) => {
+    return res.json(users);
+});
+```
+
+### Render Users in HTML
+
+```js
+app.get("/users", (req, res) => {
+    const html = `
+    <ul>
+        ${users.map((user) => `<li>${user.first_name}</li>`).join("")}
+    </ul>
+    `;
+    res.send(html);
+});
+```
+
+### Dynamic Path Parameters
+
+Retrieve a user by ID:
+
+```js
+app.get("/api/users/:userId", (req, res) => {
+    const id = req.params.userId;
+    const user = users.find((user) => user.id === id);
+    return res.json(user);
+});
+```
+
+### CRUD Operations
+
+**Create a New User**:
+
+```js
+app.post('/api/users', (req, res) => {
+    // TODO: Create new user
+    return res.json({ status: "Pending" });
+});
+```
+
+**Update an Existing User**:
+
+```js
+app.patch('/api/users/:id', (req, res) => {
+    // TODO: Edit the user with id
+    return res.json({ status: "Pending" });
+});
+```
+
+**Delete a User**:
+
+```js
+app.delete('/api/users/:id', (req, res) => {
+    // TODO: Delete the user with id
+    return res.json({ status: "Pending" });
+});
+```
+
+### Chaining Route Handlers
+
+Instead of writing the same routes multiple times, you can chain them using `app.route`:
+
+```js
+app.route("/api/users/:id")
+    .get((req, res) => {
+        const id = req.params.id;
+        const user = users.find((user) => user.id === id);
+        return res.json(user);
+    })
+    .patch((req, res) => {
+        // TODO: Edit the user with id
+        return res.json({ status: "Pending" });
+    })
+    .delete((req, res) => {
+        // TODO: Delete the user with id
+        return res.json({ status: "Pending" });
+    });
+```
+
+## Running the Server
+
+Start the server by running:
+
+```bash
+node server.js
+```
+
+You should see the message:
+
+```
+Server started at port 8000
+```
+
+Your REST API is now up and running on `http://localhost:8000`.
+
+# Summary
+
+In this guide, you've learned how to set up a basic REST API using Express.js, define various routes for CRUD operations, handle dynamic path parameters, and organize your routes efficiently using chaining. This structure provides a solid foundation for building more complex APIs.
