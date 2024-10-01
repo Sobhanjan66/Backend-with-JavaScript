@@ -669,7 +669,6 @@ In this guide, you've learned how to:
 This setup provides a foundational RESTful API that can be expanded with additional features and integrated with databases for more robust applications.
 
 
-
 # Introducing Middleware
 
 In this section, we'll explore **middleware** in Express.js. Middleware functions are essential for handling various aspects of the request-response cycle, such as logging, authentication, and data processing. We'll demonstrate how to create a middleware that logs request details to a file before processing each request.
