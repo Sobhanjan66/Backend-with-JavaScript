@@ -869,3 +869,465 @@ In this section, you've learned about:
 - **Advantages of Middleware:** Enhancing the modularity, reusability, and flexibility of your Express.js applications.
 
 By effectively utilizing middleware, you can build robust and scalable server-side applications with Express.js.
+
+# MongoDB Commands Guide
+
+MongoDB is a powerful NoSQL database known for its flexibility, scalability, and performance. This guide provides a comprehensive overview of essential MongoDB commands, covering everything from installation to advanced operations. Whether you're a beginner or looking to refresh your knowledge, this guide will help you navigate MongoDB effectively.
+
+---
+
+## Table of Contents
+
+1. [Installation and Setup](#installation-and-setup)
+2. [Basic Commands](#basic-commands)
+3. [CRUD Operations](#crud-operations)
+4. [Indexes](#indexes)
+5. [Aggregation](#aggregation)
+6. [User Management](#user-management)
+7. [Backup and Restore](#backup-and-restore)
+8. [Administration Commands](#administration-commands)
+9. [Additional Resources](#additional-resources)
+
+---
+
+## Installation and Setup
+
+Before diving into MongoDB commands, ensure that MongoDB is installed and properly set up on your machine.
+
+### Installing MongoDB
+
+#### Using Official Packages
+
+1. **Download MongoDB:**
+   - Visit the [MongoDB Download Center](https://www.mongodb.com/try/download/community) and select the appropriate version for your operating system.
+
+2. **Install MongoDB:**
+   - Follow the installation instructions specific to your OS:
+     - **Windows:** Use the MSI installer.
+     - **macOS:** Use Homebrew or download the `.tgz` file.
+     - **Linux:** Use package managers like `apt`, `yum`, or download the `.tgz` file.
+
+### Connecting to MongoDB
+
+Use the `mongo` shell to connect to your MongoDB instance.
+
+```bash
+mongo
+```
+
+By default, this connects to `mongodb://localhost:27017`.
+
+---
+
+## Basic Commands
+
+### Starting the Mongo Shell
+
+```bash
+mongo
+```
+
+### Exiting the Mongo Shell
+
+```javascript
+exit
+```
+
+### Displaying Available Databases
+
+```javascript
+show dbs
+```
+
+### Creating or Switching to a Database
+
+```javascript
+use myDatabase
+```
+
+- **Note:** MongoDB creates the database when you first store data in it.
+
+### Displaying Current Database
+
+```javascript
+db
+```
+
+### Dropping a Database
+
+```javascript
+db.dropDatabase()
+```
+
+### Displaying Collections in a Database
+
+```javascript
+show collections
+```
+
+### Dropping a Collection
+
+```javascript
+db.myCollection.drop()
+```
+
+---
+
+## CRUD Operations
+
+CRUD stands for Create, Read, Update, and Delete. These operations are fundamental for interacting with MongoDB.
+
+### Create
+
+#### Inserting a Single Document
+
+```javascript
+db.users.insertOne({
+    name: "John Doe",
+    email: "john.doe@example.com",
+    age: 30
+})
+```
+
+#### Inserting Multiple Documents
+
+```javascript
+db.users.insertMany([
+    {
+        name: "Jane Smith",
+        email: "jane.smith@example.com",
+        age: 25
+    },
+    {
+        name: "Bob Johnson",
+        email: "bob.johnson@example.com",
+        age: 35
+    }
+])
+```
+
+### Read
+
+#### Finding All Documents in a Collection
+
+```javascript
+db.users.find()
+```
+
+#### Pretty Print Results
+
+```javascript
+db.users.find().pretty()
+```
+
+#### Finding Documents with Specific Criteria
+
+```javascript
+db.users.find({ age: { $gt: 25 } })
+```
+
+#### Selecting Specific Fields
+
+```javascript
+db.users.find({ age: { $gt: 25 } }, { name: 1, email: 1, _id: 0 })
+```
+
+### Update
+
+#### Updating a Single Document
+
+```javascript
+db.users.updateOne(
+    { name: "John Doe" },
+    { $set: { age: 31 } }
+)
+```
+
+#### Updating Multiple Documents
+
+```javascript
+db.users.updateMany(
+    { age: { $lt: 30 } },
+    { $set: { status: "active" } }
+)
+```
+
+#### Renaming a Field
+
+```javascript
+db.users.updateOne(
+    { name: "Jane Smith" },
+    { $rename: { email: "contactEmail" } }
+)
+```
+
+### Delete
+
+#### Deleting a Single Document
+
+```javascript
+db.users.deleteOne({ name: "Bob Johnson" })
+```
+
+#### Deleting Multiple Documents
+
+```javascript
+db.users.deleteMany({ status: "inactive" })
+```
+
+---
+
+## Indexes
+
+Indexes improve the efficiency of query operations in MongoDB.
+
+### Creating an Index
+
+```javascript
+db.users.createIndex({ email: 1 })
+```
+
+- **`1`**: Ascending order.
+- **`-1`**: Descending order.
+
+### Listing All Indexes in a Collection
+
+```javascript
+db.users.getIndexes()
+```
+
+### Dropping an Index
+
+```javascript
+db.users.dropIndex("email_1")
+```
+
+### Creating a Compound Index
+
+```javascript
+db.users.createIndex({ name: 1, age: -1 })
+```
+
+### Creating a Unique Index
+
+```javascript
+db.users.createIndex({ email: 1 }, { unique: true })
+```
+
+---
+
+## Aggregation
+
+Aggregation operations process data records and return computed results. MongoDB provides the aggregation framework for data aggregation.
+
+### Basic Aggregation Pipeline
+
+```javascript
+db.orders.aggregate([
+    { $match: { status: "shipped" } },
+    { $group: { _id: "$customerId", total: { $sum: "$amount" } } }
+])
+```
+
+### Common Aggregation Stages
+
+1. **`$match`**: Filters documents.
+2. **`$group`**: Groups documents by a specified identifier.
+3. **`$sort`**: Sorts documents.
+4. **`$project`**: Reshapes documents by including or excluding fields.
+5. **`$limit`**: Limits the number of documents.
+6. **`$skip`**: Skips a specified number of documents.
+
+### Example: Grouping and Sorting
+
+```javascript
+db.sales.aggregate([
+    { $group: { _id: "$product", totalSales: { $sum: "$quantity" } } },
+    { $sort: { totalSales: -1 } }
+])
+```
+
+### Using `$lookup` for Joins
+
+```javascript
+db.orders.aggregate([
+    {
+        $lookup:
+            {
+                from: "customers",
+                localField: "customerId",
+                foreignField: "id",
+                as: "customerDetails"
+            }
+    }
+])
+```
+
+---
+
+## User Management
+
+Managing users and roles is crucial for database security.
+
+### Creating an Administrative User
+
+```javascript
+use admin
+
+db.createUser({
+    user: "adminUser",
+    pwd: "securePassword",
+    roles: [ { role: "userAdminAnyDatabase", db: "admin" } ]
+})
+```
+
+### Creating a Database-Specific User
+
+```javascript
+use myDatabase
+
+db.createUser({
+    user: "dbUser",
+    pwd: "anotherSecurePassword",
+    roles: [ { role: "readWrite", db: "myDatabase" } ]
+})
+```
+
+### Listing All Users
+
+```javascript
+db.getUsers()
+```
+
+### Updating a User's Password
+
+```javascript
+db.updateUser(
+    "dbUser",
+    { pwd: "newSecurePassword" }
+)
+```
+
+### Deleting a User
+
+```javascript
+db.dropUser("dbUser")
+```
+
+---
+
+## Backup and Restore
+
+Ensuring data integrity through backups is essential.
+
+### Backup Using `mongodump`
+
+```bash
+mongodump --db myDatabase --out /path/to/backup/
+```
+
+- **`--db`**: Specifies the database to dump.
+- **`--out`**: Specifies the output directory.
+
+### Restore Using `mongorestore`
+
+```bash
+mongorestore --db myDatabase /path/to/backup/myDatabase
+```
+
+- **`--db`**: Specifies the database to restore.
+- **`/path/to/backup/myDatabase`**: Path to the backup files.
+
+### Backup Entire MongoDB Instance
+
+```bash
+mongodump --out /path/to/backup/
+```
+
+### Restore Entire MongoDB Instance
+
+```bash
+mongorestore /path/to/backup/
+```
+
+---
+
+## Administration Commands
+
+Managing the MongoDB server involves various administrative tasks.
+
+### Checking Server Status
+
+```javascript
+db.serverStatus()
+```
+
+### Displaying Current Operations
+
+```javascript
+db.currentOp()
+```
+
+### Viewing Replication Status
+
+```javascript
+rs.status()
+```
+
+### Initiating Replication
+
+```javascript
+rs.initiate()
+```
+
+### Adding a Member to a Replica Set
+
+```javascript
+rs.add("hostname:port")
+```
+
+### Removing a Member from a Replica Set
+
+```javascript
+rs.remove("hostname:port")
+```
+
+### Sharding Commands
+
+#### Enabling Sharding on a Database
+
+```javascript
+sh.enableSharding("myDatabase")
+```
+
+#### Sharding a Collection
+
+```javascript
+sh.shardCollection("myDatabase.myCollection", { shardKey: 1 })
+```
+
+---
+
+## Additional Resources
+
+- [Official MongoDB Documentation](https://docs.mongodb.com/)
+- [MongoDB University](https://university.mongodb.com/)
+- [MongoDB Shell Commands](https://docs.mongodb.com/manual/reference/mongo-shell/)
+- [MongoDB CRUD Operations](https://docs.mongodb.com/manual/crud/)
+
+---
+
+## Summary
+
+This guide covered essential MongoDB commands, including:
+
+- **Installation and Setup**: Installing MongoDB and starting the service.
+- **Basic Commands**: Navigating databases and collections.
+- **CRUD Operations**: Creating, reading, updating, and deleting documents.
+- **Indexes**: Improving query performance.
+- **Aggregation**: Processing and analyzing data.
+- **User Management**: Securing your databases.
+- **Backup and Restore**: Ensuring data integrity.
+- **Administration Commands**: Managing the MongoDB server.
+
+By mastering these commands, you'll be well-equipped to handle a wide range of tasks in MongoDB, from basic data manipulation to complex data processing and server management.
