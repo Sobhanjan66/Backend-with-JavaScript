@@ -1331,3 +1331,602 @@ This guide covered essential MongoDB commands, including:
 - **Administration Commands**: Managing the MongoDB server.
 
 By mastering these commands, you'll be well-equipped to handle a wide range of tasks in MongoDB, from basic data manipulation to complex data processing and server management.
+
+# Getting Started with Mongoose Package to Connect Your Project with MongoDB
+
+Mongoose is an elegant MongoDB object modeling tool designed to work in an asynchronous environment. It provides a straightforward, schema-based solution to model your application data, offering built-in type casting, validation, query building, and more.
+
+In this guide, we'll walk through the steps to integrate Mongoose into your Node.js project, define schemas and models, and perform CRUD operations using Express.js routes.
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Connecting to MongoDB](#connecting-to-mongodb)
+3. [Defining Schemas and Models](#defining-schemas-and-models)
+4. [CRUD Operations with Mongoose](#crud-operations-with-mongoose)
+    - [Creating Entries](#creating-entries)
+    - [Reading Entries](#reading-entries)
+    - [Updating Entries](#updating-entries)
+    - [Deleting Entries](#deleting-entries)
+5. [Testing with Postman](#testing-with-postman)
+6. [Viewing Data in MongoDB Shell](#viewing-data-in-mongodb-shell)
+7. [Complete Server Example](#complete-server-example)
+8. [Summary](#summary)
+
+---
+
+## Installation
+
+First, install Mongoose using npm:
+
+```bash
+npm install mongoose
+```
+
+Ensure that you have already initialized your Node.js project with `npm init` and have Express.js set up.
+
+## Connecting to MongoDB
+
+To connect your project to MongoDB using Mongoose, add the following code snippet to your server file (e.g., `server.js`):
+
+```javascript
+const mongoose = require("mongoose");
+
+// Connection
+mongoose.connect("mongodb://localhost:27017/DB-Name", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log("MongoDB Connected!!"))
+.catch((err) => console.log("Mongo Error:", err));
+```
+
+- **`mongoose.connect`**: Establishes a connection to the MongoDB database.
+- **`mongodb://localhost:27017/DB-Name`**: Replace `DB-Name` with your desired database name. If the database doesn't exist, MongoDB will create it upon first data insertion.
+- **Options**:
+  - **`useNewUrlParser`**: Uses the new URL string parser.
+  - **`useUnifiedTopology`**: Uses the new Server Discover and Monitoring engine.
+
+## Defining Schemas and Models
+
+### Schema
+
+A Mongoose schema defines the structure of the documents within a collection. Here's how to define a `User` schema:
+
+```javascript
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: true,
+    },
+    lastName: {
+        type: String,
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    jobTitle: {
+        type: String,
+    },
+}, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
+```
+
+- **`timestamps: true`**: Automatically adds `createdAt` and `updatedAt` fields to the schema.
+
+### Model
+
+A Mongoose model provides an interface to interact with the database for a specific collection. Create a `User` model based on the schema:
+
+```javascript
+const User = mongoose.model("User", userSchema);
+```
+
+- **`"User"`**: The name of the model. Mongoose will create a collection named `users` (pluralized) in the database.
+
+## CRUD Operations with Mongoose
+
+### Creating Entries
+
+To create new user entries in the database, define a POST route in your Express.js application:
+
+```javascript
+// Creating entries in the database
+app.post("/api/users", async (req, res) => {
+    const body = req.body;
+
+    // Validate request body
+    if (
+        !body ||
+        !body.firstName ||
+        !body.lastName ||
+        !body.email ||
+        !body.gender ||
+        !body.jobTitle
+    ) {
+        return res.status(400).json({ msg: "All fields are required!!!" });
+    }
+
+    try {
+        // Create a new user
+        await User.create({
+            firstName: body.firstName,
+            lastName: body.lastName,
+            email: body.email,
+            gender: body.gender,
+            jobTitle: body.jobTitle,
+        });
+
+        return res.status(201).json({ msg: "Success" });
+    } catch (error) {
+        console.error("Error creating user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **Validation**: Ensures all required fields are present in the request body.
+- **`User.create`**: Creates and saves a new user document in the database.
+
+### Reading Entries
+
+#### Fetching All Users
+
+To retrieve all user entries from the database:
+
+```javascript
+// Showing entries from the database
+app.get("/api/users", async (req, res) => {
+    try {
+        const allDbUsers = await User.find({});
+        res.setHeader("X-Myname", "Sobhanjan Mahanta"); // Custom Header (Always add 'X' to custom headers)
+        return res.json(allDbUsers);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **`User.find({})`**: Retrieves all documents in the `users` collection.
+- **Custom Header**: Adds a custom header `X-Myname` to the response.
+
+#### Rendering Users in HTML
+
+To display users in an HTML format:
+
+```javascript
+// Showing specific information from the database
+app.get("/users", async (req, res) => {
+    try {
+        const allDbUsers = await User.find({});
+        const html = `
+        <ul>
+            ${allDbUsers
+                .map((user) => `<li>${user.firstName} - ${user.email}</li>`)
+                .join("")}
+        </ul>
+        `;
+
+        res.send(html);
+    } catch (error) {
+        console.error("Error rendering users:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **HTML Response**: Generates an unordered list of users with their first names and emails.
+
+#### Fetching a User by ID
+
+```javascript
+// Showing information by ID
+app.get("/api/users/:id", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        return res.json(user);
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **`User.findById`**: Retrieves a user document by its unique ID.
+- **Error Handling**: Returns a 404 error if the user is not found.
+
+### Updating Entries
+
+#### Updating a User by ID
+
+```javascript
+// Updating information by ID
+app.patch("/api/users/:id", async (req, res) => {
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { lastName: "Changed" },
+            { new: true } // Returns the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.json({ status: "Success", user: updatedUser });
+    } catch (error) {
+        console.error("Error updating user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **`User.findByIdAndUpdate`**: Updates a user document by its ID.
+- **Options**:
+  - **`new: true`**: Returns the updated document instead of the original.
+
+### Deleting Entries
+
+#### Deleting a User by ID
+
+```javascript
+// Deleting information by ID
+app.delete("/api/users/:id", async (req, res) => {
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+        if (!deletedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.json({ status: "Success", msg: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+```
+
+- **`User.findByIdAndDelete`**: Deletes a user document by its ID.
+- **Response**: Confirms successful deletion.
+
+## Testing with Postman
+
+To test your API endpoints, use Postman to send HTTP requests.
+
+### Creating a User (POST)
+
+1. **URL**: `http://localhost:8000/api/users`
+2. **Method**: POST
+3. **Headers**:
+   - `Content-Type`: `application/json`
+4. **Body**:
+   ```json
+   {
+       "firstName": "Alice",
+       "lastName": "Johnson",
+       "email": "alice.johnson@example.com",
+       "gender": "Female",
+       "jobTitle": "Software Engineer"
+   }
+   ```
+5. **Response**:
+   ```json
+   {
+       "msg": "Success"
+   }
+   ```
+
+### Fetching All Users (GET)
+
+1. **URL**: `http://localhost:8000/api/users`
+2. **Method**: GET
+3. **Headers**:
+   - `X-Myname`: `Sobhanjan Mahanta` (automatically added by the server)
+4. **Response**:
+   ```json
+   [
+       {
+           "_id": "64a7f9b5e1b4c2f1d4e6f8a9",
+           "firstName": "Alice",
+           "lastName": "Johnson",
+           "email": "alice.johnson@example.com",
+           "gender": "Female",
+           "jobTitle": "Software Engineer",
+           "createdAt": "2023-10-10T10:00:00.000Z",
+           "updatedAt": "2023-10-10T10:00:00.000Z",
+           "__v": 0
+       },
+       // More users...
+   ]
+   ```
+
+### Fetching a User by ID (GET)
+
+1. **URL**: `http://localhost:8000/api/users/<user_id>`
+2. **Method**: GET
+3. **Response**:
+   ```json
+   {
+       "_id": "64a7f9b5e1b4c2f1d4e6f8a9",
+       "firstName": "Alice",
+       "lastName": "Johnson",
+       "email": "alice.johnson@example.com",
+       "gender": "Female",
+       "jobTitle": "Software Engineer",
+       "createdAt": "2023-10-10T10:00:00.000Z",
+       "updatedAt": "2023-10-10T10:00:00.000Z",
+       "__v": 0
+   }
+   ```
+
+### Updating a User (PATCH)
+
+1. **URL**: `http://localhost:8000/api/users/<user_id>`
+2. **Method**: PATCH
+3. **Body**:
+   ```json
+   {
+       "lastName": "Smith"
+   }
+   ```
+4. **Response**:
+   ```json
+   {
+       "status": "Success",
+       "user": {
+           "_id": "64a7f9b5e1b4c2f1d4e6f8a9",
+           "firstName": "Alice",
+           "lastName": "Smith",
+           "email": "alice.johnson@example.com",
+           "gender": "Female",
+           "jobTitle": "Software Engineer",
+           "createdAt": "2023-10-10T10:00:00.000Z",
+           "updatedAt": "2023-10-10T10:05:00.000Z",
+           "__v": 0
+       }
+   }
+   ```
+
+### Deleting a User (DELETE)
+
+1. **URL**: `http://localhost:8000/api/users/<user_id>`
+2. **Method**: DELETE
+3. **Response**:
+   ```json
+   {
+       "status": "Success",
+       "msg": "User deleted successfully"
+   }
+   ```
+
+## Viewing Data in MongoDB Shell
+
+After performing CRUD operations, you can view the data directly in the MongoDB shell.
+
+### Steps:
+
+1. **Switch to Your Database**:
+
+    ```bash
+    use DB-Name
+    ```
+
+2. **Show Collections**:
+
+    ```bash
+    show collections
+    ```
+
+3. **Find All Users**:
+
+    ```javascript
+    db.users.find({})
+    ```
+
+    **Pretty Print**:
+
+    ```javascript
+    db.users.find({}).pretty()
+    ```
+
+## Complete Server Example
+
+Below is the complete `server.js` file integrating Mongoose with Express.js for handling CRUD operations.
+
+```javascript
+const express = require("express");
+const mongoose = require("mongoose");
+const app = express();
+const PORT = 8000;
+
+// Middleware to parse URL-encoded and JSON data
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+// Connecting to MongoDB
+mongoose.connect("mongodb://localhost:27017/DB-Name", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log("MongoDB Connected!!"))
+.catch((err) => console.log("Mongo Error:", err));
+
+// Schema Definition
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        required: true,
+    },
+    lastName: {
+        type: String,
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    jobTitle: {
+        type: String,
+    },
+}, { timestamps: true });
+
+// Model Creation
+const User = mongoose.model("User", userSchema);
+
+// Creating Entries in Database
+app.post("/api/users", async (req, res) => {
+    const body = req.body;
+
+    // Validate request body
+    if (
+        !body ||
+        !body.firstName ||
+        !body.lastName ||
+        !body.email ||
+        !body.gender ||
+        !body.jobTitle
+    ) {
+        return res.status(400).json({ msg: "All fields are required!!!" });
+    }
+
+    try {
+        // Create a new user
+        await User.create({
+            firstName: body.firstName,
+            lastName: body.lastName,
+            email: body.email,
+            gender: body.gender,
+            jobTitle: body.jobTitle,
+        });
+
+        return res.status(201).json({ msg: "Success" });
+    } catch (error) {
+        console.error("Error creating user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Fetching All Users
+app.get("/api/users", async (req, res) => {
+    try {
+        const allDbUsers = await User.find({});
+        res.setHeader("X-Myname", "Sobhanjan Mahanta"); // Custom Header
+        return res.json(allDbUsers);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Rendering Users in HTML
+app.get("/users", async (req, res) => {
+    try {
+        const allDbUsers = await User.find({});
+        const html = `
+        <ul>
+            ${allDbUsers
+                .map((user) => `<li>${user.firstName} - ${user.email}</li>`)
+                .join("")}
+        </ul>
+        `;
+
+        res.send(html);
+    } catch (error) {
+        console.error("Error rendering users:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Fetching a User by ID
+app.get("/api/users/:id", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+        return res.json(user);
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Updating a User by ID
+app.patch("/api/users/:id", async (req, res) => {
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { lastName: "Changed" },
+            { new: true } // Returns the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.json({ status: "Success", user: updatedUser });
+    } catch (error) {
+        console.error("Error updating user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Deleting a User by ID
+app.delete("/api/users/:id", async (req, res) => {
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+        if (!deletedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.json({ status: "Success", msg: "User deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        return res.status(500).json({ msg: "Internal Server Error" });
+    }
+});
+
+// Starting the Server
+app.listen(PORT, () => console.log(`Server started at port ${PORT}`));
+```
+
+### Explanation of the Complete Server Example
+
+1. **Imports and Setup**:
+    - **Express.js**: Framework for building web applications.
+    - **Mongoose**: ODM for MongoDB.
+    - **Middleware**: Parses incoming request bodies in a middleware before your handlers.
+
+2. **Connecting to MongoDB**:
+    - Establishes a connection to the MongoDB database named `DB-Name`.
+
+3. **Schema and Model**:
+    - Defines the `User` schema with fields: `firstName`, `lastName`, `email`, and `jobTitle`.
+    - Creates the `User` model based on the schema.
+
+4. **Routes**:
+    - **POST `/api/users`**: Creates a new user after validating the request body.
+    - **GET `/api/users`**: Retrieves all users and sets a custom header.
+    - **GET `/users`**: Renders users in an HTML unordered list.
+    - **GET `/api/users/:id`**: Retrieves a user by their unique ID.
+    - **PATCH `/api/users/:id`**: Updates a user's `lastName` by their ID.
+    - **DELETE `/api/users/:id`**: Deletes a user by their ID.
+
+5. **Starting the Server**:
+    - Listens on port `8000` and logs a confirmation message upon successful startup.
+
+## Summary
+
+In this guide, you've learned how to integrate Mongoose into your Node.js and Express.js project to interact with MongoDB effectively. The key takeaways include:
+
+- **Installation**: Setting up Mongoose using npm.
+- **Connection**: Establishing a connection to a MongoDB database.
+- **Schema and Model**: Defining data structures and creating models to interact with collections.
+- **CRUD Operations**: Implementing Create, Read, Update, and Delete functionalities using Express.js routes.
+- **Testing**: Using Postman to test your API endpoints.
+- **Data Verification**: Viewing and verifying data directly in the MongoDB shell.
+
+By leveraging Mongoose, you can streamline your database interactions, enforce data schemas, and build scalable and maintainable applications with ease.
