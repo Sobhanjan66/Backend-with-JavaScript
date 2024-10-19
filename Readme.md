@@ -2923,3 +2923,290 @@ By restructuring your Node.js project using the MVC architecture, you've achieve
 - **Testing**: Use tools like Postman to verify API functionality.
 
 Adopting the MVC pattern not only makes your application more organized but also sets a solid foundation for future enhancements and team collaborations.
+
+
+# URL Shortener Website
+
+This is a simple URL shortener application built with **Node.js**, **Express**, **MongoDB**, and **Mongoose**, following the **MVC architecture**.
+
+---
+
+## Project Setup
+
+### Step 1: Initialize the project
+
+```bash
+npm init
+```
+
+### Step 2: Install Dependencies
+
+```bash
+npm install express mongoose nodemon shortid
+```
+
+### Step 3: Update `package.json`
+
+Replace the `start` script with the following:
+
+```json
+"scripts": {
+  "start": "nodemon index.js"
+}
+```
+
+---
+
+## Folder Structure
+
+```
+├── connect.js
+├── controllers
+│   └── url.js
+├── models
+│   └── url.js
+├── routes
+│   └── url.js
+├── index.js
+└── package.json
+```
+
+---
+
+## Code Implementation
+
+### 1. `index.js`
+
+```javascript
+const express = require('express');
+const urlRoute = require("./routes/url");
+const { connectToMongoDB } = require("./connect");
+const URL = require("./models/url");
+
+const app = express();
+const PORT = 8001;
+
+connectToMongoDB("mongodb://localhost:27017/short-url")
+    .then(() => console.log("MongoDB Connected!"))
+    .catch(err => console.error(err));
+
+app.use(express.json());
+
+app.use("/url", urlRoute);
+
+app.get('/:shortId', async (req, res) => {
+   const shortId = req.params.shortId;
+   const entry = await URL.findOneAndUpdate(
+     { shortId },
+     {
+       $push: { visitHistory: { timeStamp: new Date() } }
+     }
+   );
+   res.redirect(entry.redirectURL);
+});
+
+app.listen(PORT, () => console.log(`Server started at PORT: ${PORT}`));
+```
+
+### 2. `routes/url.js`
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const { handleGenerateNewShortURL, handleGetAnalytics } = require("../controllers/url");
+
+router.post('/', handleGenerateNewShortURL);
+router.get('/analytics/:shortId', handleGetAnalytics);
+
+module.exports = router;
+```
+
+### 3. `models/url.js`
+
+```javascript
+const mongoose = require('mongoose');
+
+const urlSchema = new mongoose.Schema({
+   shortId: {
+      type: String,
+      required: true,
+      unique: true,
+   },
+   redirectURL: {
+      type: String,
+      required: true,
+   },
+   visitHistory: [{ timeStamp: { type: Date } }],
+}, { timestamps: true });
+
+const URL = mongoose.model("URL", urlSchema);
+
+module.exports = URL;
+```
+
+### 4. `controllers/url.js`
+
+```javascript
+const shortid = require("shortid");
+const URL = require('../models/url');
+
+async function handleGenerateNewShortURL(req, res) {
+   const body = req.body;
+   if (!body.url) return res.status(400).json({ error: "URL is required" });
+
+   const shortId = shortid.generate();
+   await URL.create({
+      shortId,
+      redirectURL: body.url,
+      visitHistory: [],
+   });
+
+   return res.json({ id: shortId });
+}
+
+async function handleGetAnalytics(req, res) {
+   const shortId = req.params.shortId;
+   const result = await URL.findOne({ shortId });
+   if (!result) return res.status(404).json({ error: "Short URL not found" });
+
+   return res.json({
+      totalClicks: result.visitHistory.length,
+      analytics: result.visitHistory
+   });
+}
+
+module.exports = {
+   handleGenerateNewShortURL,
+   handleGetAnalytics,
+};
+```
+
+### 5. `connect.js`
+
+```javascript
+const mongoose = require('mongoose');
+mongoose.set("strictQuery", true); // To suppress deprecation warnings
+
+async function connectToMongoDB(url) {
+   return mongoose.connect(url);
+}
+
+module.exports = {
+   connectToMongoDB,
+};
+```
+
+---
+
+## MongoDB Shell Output Sample
+
+### Inserted Sample URL Document:
+
+```javascript
+{
+  "_id": ObjectId("650f25b4f65a4c25b5f007e6"),
+  "shortId": "5fgHnW",
+  "redirectURL": "https://www.google.com",
+  "visitHistory": [
+    { "timeStamp": ISODate("2024-10-18T09:21:16.374Z") },
+    { "timeStamp": ISODate("2024-10-18T09:31:42.987Z") }
+  ],
+  "createdAt": ISODate("2024-10-18T09:21:16.374Z"),
+  "updatedAt": ISODate("2024-10-18T09:31:42.987Z"),
+  "__v": 0
+}
+```
+
+### Query All URLs:
+
+```bash
+db.urls.find().pretty()
+```
+
+```json
+[
+  {
+    "_id": "650f25b4f65a4c25b5f007e6",
+    "shortId": "5fgHnW",
+    "redirectURL": "https://www.google.com",
+    "visitHistory": [
+      { "timeStamp": "2024-10-18T09:21:16.374Z" },
+      { "timeStamp": "2024-10-18T09:31:42.987Z" }
+    ],
+    "createdAt": "2024-10-18T09:21:16.374Z",
+    "updatedAt": "2024-10-18T09:31:42.987Z",
+    "__v": 0
+  }
+]
+```
+
+---
+
+## Postman Testing Output
+
+### 1. Generate a Short URL
+
+**Request**:
+
+```
+POST /url
+Content-Type: application/json
+
+{
+  "url": "https://www.google.com"
+}
+```
+
+**Response**:
+
+```json
+{
+  "id": "5fgHnW"
+}
+```
+
+### 2. Redirect Using Short URL
+
+**Request**:
+
+```
+GET /5fgHnW
+```
+
+**Response**:
+
+- Status Code: `302 (Found)`
+- Redirects to: `https://www.google.com`
+
+### 3. Get URL Analytics
+
+**Request**:
+
+```
+GET /url/analytics/5fgHnW
+```
+
+**Response**:
+
+```json
+{
+  "totalClicks": 2,
+  "analytics": [
+    { "timeStamp": "2024-10-18T09:21:16.374Z" },
+    { "timeStamp": "2024-10-18T09:31:42.987Z" }
+  ]
+}
+```
+
+---
+
+## Conclusion
+
+This URL shortener project demonstrates a simple application of MongoDB, Express, and Node.js (MERN stack). It includes:
+
+- URL creation with `POST` requests.
+- URL redirection using short links.
+- Analytics for each short URL (total clicks and visit timestamps).
+
+
+ 
